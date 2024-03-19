@@ -2,9 +2,14 @@
 # Free Music Sound Effects Download - Pixabay
 # https://pixabay.com/sound-effects/search/music/
 import librosa
+import librosa.display
 import matplotlib.pyplot as plt
 import numpy as np
-import librosa.display
+from sklearn.model_selection import train_test_split
+from tensorflow.keras import layers, models
+from sklearn.metrics import accuracy_score, classification_report
+
+
 
 # Path to your MP3 file
 audio_path = 'cinematic-music-sketches-11-cinematic-percussion-sketch-116186.mp3'
@@ -141,3 +146,63 @@ model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=
 
 # Train the model
 model.fit(X_train, y_train, epochs=10, validation_data=(X_test, y_test))
+
+
+# Make predictions on the test set
+predictions = model.predict(X_test)
+predicted_classes = np.argmax(predictions, axis=1)
+
+# Evaluate accuracy
+accuracy = accuracy_score(y_test, predicted_classes)
+print(f"Accuracy: {accuracy * 100:.2f}%")
+
+# Evaluate precision, recall, and F1 score
+report = classification_report(y_test, predicted_classes, target_names = ["Neutral", "Happy", "Sad", "Angry", "Fearful", "Disgusted", "Surprised"]
+)
+print(report)
+
+
+
+
+def load_and_augment(audio_path, n_steps=4, noise_factor=0.005, n_mfcc=13):
+    y, sr = librosa.load(audio_path)
+    y_pitched = librosa.effects.pitch_shift(y, sr=sr, n_steps=n_steps)
+    y_noisy = y + noise_factor * np.random.randn(len(y))
+
+    mfcc_original = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc).T
+    mfcc_pitched = librosa.feature.mfcc(y=y_pitched, sr=sr, n_mfcc=n_mfcc).T
+    mfcc_noisy = librosa.feature.mfcc(y=y_noisy, sr=sr, n_mfcc=n_mfcc).T
+
+    return mfcc_original, mfcc_pitched, mfcc_noisy
+
+audio_path = 'cinematic-music-sketches-11-cinematic-percussion-sketch-116186.mp3'
+mfcc_original, mfcc_pitched, mfcc_noisy = load_and_augment(audio_path)
+
+# Dummy labels for demonstration
+labels = np.zeros((mfcc_original.shape[0],))
+labels = np.concatenate([labels, labels, labels])  # Replicating for augmented data
+
+# Combine all MFCC features and labels
+X = np.concatenate([mfcc_original, mfcc_pitched, mfcc_noisy], axis=0)
+y = labels
+
+# Reshape for CNN input
+X_reshaped = X[..., np.newaxis]  # Adding a channel dimension
+
+# Split the dataset
+X_train, X_test, y_train, y_test = train_test_split(X_reshaped, y, test_size=0.2, random_state=42)
+
+input_shape = X_train.shape[1:]  # Getting input shape for the model
+
+# Defining the model with Input layer
+# Assuming X_train is reshaped properly for Conv1D
+model = models.Sequential([
+    layers.Input(shape=(X_train.shape[1], X_train.shape[2])),  # (time_steps, n_mfcc)
+    layers.Conv1D(32, 3, activation='relu'),
+    layers.MaxPooling1D(2),
+    layers.Flatten(),
+    layers.Dense(64, activation='relu'),
+    layers.Dense(7, activation='softmax')  # Assuming 7 emotions/categories
+])
+
+
