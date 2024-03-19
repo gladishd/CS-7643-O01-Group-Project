@@ -157,7 +157,9 @@ metrics = ["accuracy"])
 """ And now for "another" example of splitting the data into testing and..
 training sets """
 from sklearn.model_selection import train_test_split
-""" load in the audio file! """
+""" load in the audio file! Although our team's background "primarily lies in
+civil engineering, we have so much experience actually and it's all in Python,
+Java, and yes, Machine Learning..."""
 audio_path = "cinematic-music-sketches-11-cinematic-percussion-sketch-116186.mp3"
 (y, sr) = librosa.load(audio_path)
 """ As "before" extract the MFCCs, and then transpose them such that the shape
@@ -199,7 +201,8 @@ model.compile(optimizer = "adam",
               loss = "sparse_categorical_crossentropy",
               metrics=["accuracy"]
               )
-""" And then we train the model. """
+""" And then we train the model. Behavior Classification..and Speech Expression
+Recognition are the thing! That are "closely related". """
 model.fit(X_train, y_train, epochs = 10, validation_data = (X_test, y_test))
 """ After making predictions on the test set, and compiling the CNN model which
 means that yes, we've got these "dense layers" and we're going to preprocess
