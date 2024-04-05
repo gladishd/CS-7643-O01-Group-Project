@@ -1,3 +1,7 @@
+Data sets: https://zenodo.org/records/1188976#.XrC7a5NKjOR
+ https://github.com/CheyneyComputerScience/CREMA-D
+
+
 pip install librosa matplotlib numpy
 
 
