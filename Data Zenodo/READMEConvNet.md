@@ -1,3 +1,49 @@
+To mitigate these "loss curve issues" we could consider regularization, data augmentation, model architecture complexity, hyperparameter tuning, and early stopping.
+
+# Confusion Matrix
+
+The Diagonal Values are the True Positives. These are the numbers that represent the instances in which the model correctly predicted each emotion. The higher these values the better our model is at identifying the correct emotion.
+
+The Off-Diagonal Values are Misclassifications. These values are predictions where the model has misclassified an emotion. For instance, how often sadness was mistaken for anger or happiness for neutral.
+
+Balance Across Classes - we want to see relatively even numbers across the matrix diagonally, which would indicate that the model performs consistently across different emotions.
+
+Dominant Misclassifications: If certain off-diagonal values are particularly high, this indicates systematic confusion between certain emotions, which could suggest areas for model improvement.
+
+# Loss Graph
+
+Training Loss. This should "generally" decrease over time, indicating that the model is learning from the training data.
+
+Validation Loss. This should "also" decrease, but if it starts to increase while training loss decreases, it can be a sign of overfitting – meaning the model is learning the training data too well and failing to generalize to new data.
+
+Gap Between Training and Validation Loss. A small gap is normal and indicates good generalization. "However", a large or increasing gap suggests overfitting.
+
+Fluctuations in Loss. "Some" fluctuation is normal, but erratic or large swings can suggest issues with the learning rate or that the model is not learning effectively.
+
+# Accuracy Graph
+
+Training Accuracy. It's expected to increase over time as the model becomes better at classifying the training data.
+
+Validation Accuracy. It should also rise, "ideally" at a similar rate to the training accuracy. A leveling off or decline may indicate overfitting.
+
+Gap Between Training and Validation Accuracy. A small gap is normal, but if it's large, it suggests the model may be overfitting to the training data.
+
+Consistency. I want to see a smooth curve with "gradual" improvements rather than erratic jumps.
+
+# Confusion Matrix "The"
+
+Diagonal Values: These numbers "represent" the correct predictions for each class. The higher these numbers are, the better your model performs for the corresponding emotion.
+
+Off-Diagonal Values: These indicate misclassifications. For instance, if there's a high number in the row for "happiness" and the column for "sadness," it means the model often confuses "happiness" with "sadness."
+
+Class Balance: If some classes have "significantly" more samples, the model might be biased towards predicting those more frequently.
+
+# Model Loss Graph
+
+Training Loss: It seems to decrease, which is good, indicating that the model is learning and improving its ability to predict the training data.
+
+Validation Loss: Ideally, this should "mirror" the training loss, decreasing alongside it. However, if it starts increasing or fluctuating wildly, that could indicate overfitting—where the model learns the training data too well, including its noise and outliers, and fails to generalize to new data.
+
 """ In the development of our model, the most important thing is to
 make sure that the expected input shape, and this is the kind of thing
 that people like Thanushan and Peter, and "Suba" Subanky and they talk about
