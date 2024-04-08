@@ -60,4 +60,84 @@ def main(audio_path):
 
 if __name__ == '__main__':
     # Replace 'path_to_audio_file.wav' with the path to an actual audio file
-    main('path_to_audio_file.wav')
+    main('Audio_Song_Actors_01-24/angry/angry.wav')
+    main('Audio_Song_Actors_01-24/happy/happy.wav')
+    main('Audio_Song_Actors_01-24/neutral/neutral.wav')
+    main('Audio_Song_Actors_01-24/sad/sad.wav')
+
+import matplotlib.pyplot as plt
+
+def plot_mfcc(audio_path):
+    y, sr = librosa.load(audio_path, sr=None)
+    mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+    plt.figure(figsize=(10, 4))
+    librosa.display.specshow(mfccs, x_axis='time')
+    plt.colorbar()
+    plt.title('MFCC')
+    plt.savefig('evi_mfcc.png')
+    plt.tight_layout()
+    plt.show()
+
+# Call this function with the path to "an" audio file
+plot_mfcc('Audio_Song_Actors_01-24/angry/angry.wav')
+plot_mfcc('Audio_Song_Actors_01-24/happy/happy.wav')
+plot_mfcc('Audio_Song_Actors_01-24/neutral/neutral.wav')
+plot_mfcc('Audio_Song_Actors_01-24/sad/sad.wav')
+
+def plot_emotion_distribution(audio_path):
+    features = preprocess_audio(audio_path)
+    prediction = model.predict(np.array([features]))[0]
+    emotion_labels = ['angry', 'happy', 'sad', 'neutral']
+
+    plt.bar(emotion_labels, prediction)
+    plt.title('EVI Emotion Prediction Distribution')
+    plt.ylabel('Probability')
+    plt.savefig('evi_emotiona_prediction_distribution.png')
+    plt.show()
+
+plot_emotion_distribution('Audio_Song_Actors_01-24/angry/angry.wav')
+plot_emotion_distribution('Audio_Song_Actors_01-24/happy/happy.wav')
+plot_emotion_distribution('Audio_Song_Actors_01-24/neutral/neutral.wav')
+plot_emotion_distribution('Audio_Song_Actors_01-24/sad/sad.wav')
+
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+
+def plot_confusion_matrix(y_true, y_pred, classes):
+    cm = confusion_matrix(y_true, y_pred)
+    plt.figure(figsize=(10, 7))
+    sns.heatmap(cm, annot=True, fmt='d',
+                xticklabels=classes, yticklabels=classes)
+    plt.title('Confusion Matrix')
+    plt.ylabel('True Label')
+    plt.xlabel('Predicted Label')
+    plt.show()
+
+# Example usage, assuming y_test and predictions are available
+# plot_confusion_matrix(y_test, predictions, emotion_labels)
+
+def plot_training_history(history):
+    acc = history.history['accuracy']
+    val_acc = history.history['val_accuracy']
+    loss = history.history['loss']
+    val_loss = history.history['val_loss']
+    epochs = range(1, len(acc) + 1)
+
+    plt.figure(figsize=(12, 5))
+
+    plt.subplot(1, 2, 1)
+    plt.plot(epochs, acc, 'b', label='Training acc')
+    plt.plot(epochs, val_acc, 'r', label='Validation acc')
+    plt.title('Training and validation accuracy')
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(epochs, loss, 'b', label='Training loss')
+    plt.plot(epochs, val_loss, 'r', label='Validation loss')
+    plt.title('Training and validation loss')
+    plt.legend()
+
+    plt.show()
+
+# Call this function with the history object from the model.fit() method
+# plot_training_history(history)
