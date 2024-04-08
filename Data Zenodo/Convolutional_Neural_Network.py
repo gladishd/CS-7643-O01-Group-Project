@@ -8,6 +8,7 @@ something very special. They indicate that the dense layer has some kind of
 expectation; it expects the inputs to have a size of 55552, but in "reality" they
 actually have the inputs that have size 44800.
 
+<<<<<<< HEAD
 The critical thing to note is that Python version 3.10 is too far, for Tensorflow.
 I just did
 (new_env) ~/CS-7643-O01/Group_Project/Data Zenodo (main ✔) conda install python=3.9
@@ -18,6 +19,8 @@ python -m pip uninstall tensorflow tensorflow-macos tensorflow-metal
 python -m pip install tensorflow-macos tensorflow-metal
 
 
+=======
+>>>>>>> 4e241fc783d51a8ecdeddb59d38c59a0601b5d75
 Now, this brings about some kind of discrepancy. The discrepancy "arises" from
 the dimensions of the input spectrograms and "this, I think," is the way that
 the input spectrograms' dimensions match with the processing of the "convolutional"
