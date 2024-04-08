@@ -22,7 +22,7 @@ max_files = 10  # Limit the number of files for quick testing
 # Define the path to your dataset
 dataset_path = 'Audio_Song_Actors_01-24'
 
-# Emotion labels
+# Emotion labelsx
 emotion_dict = {
     '01': 'neutral',
     '02': 'calm',
