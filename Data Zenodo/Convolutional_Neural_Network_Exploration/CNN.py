@@ -99,6 +99,7 @@ from sklearn.metrics import confusion_matrix
 cm = confusion_matrix(y_test, predicted_classes)
 plt.figure(figsize=(10, 7))
 sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+plt.savefig("CNN_confusion_matrix.png")
 plt.show()
 
 import tensorflow as tf
@@ -120,7 +121,8 @@ def plot_class_activation_maps(model, img_array, class_idx):
         heatmap = np.maximum(heatmap, 0) / np.max(heatmap)
 
     plt.matshow(heatmap[0])
-    plt.title('Heatmap of Class Activation')
+    plt.title('CNN Heatmap of Class Activation')
+    plt.savefig("CNN_class_activation_heatmap.png")
     plt.show()
 
 
@@ -270,7 +272,7 @@ history = model.fit(X_train, y_train, epochs=10, validation_data=(X_test, y_test
 # Plot training & validation accuracy values
 plt.plot(history.history['accuracy'])
 plt.plot(history.history['val_accuracy'])
-plt.title('Model accuracy')
+plt.title('CNN Model accuracy')
 plt.ylabel('Accuracy')
 plt.xlabel('Epoch')
 plt.legend(['Train', 'Test'], loc='upper left')
@@ -280,7 +282,7 @@ plt.show()
 # Plot training & validation loss values
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
-plt.title('Model loss')
+plt.title('CNN Model loss')
 plt.ylabel('Loss')
 plt.xlabel('Epoch')
 plt.legend(['Train', 'Test'], loc='upper left')
@@ -302,7 +304,7 @@ cm = confusion_matrix(true_classes, predicted_classes)
 # Plotting
 plt.figure(figsize=(10, 7))
 sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
-plt.title('Confusion Matrix')
+plt.title('CNN Confusion Matrix')
 plt.ylabel('True label')
 plt.xlabel('Predicted label')
 plt.savefig('cnnconfusion_matrix.png')  # Saving the figure
@@ -391,8 +393,9 @@ def plot_roc_curve(y_true, y_pred, n_classes):
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('Receiver Operating Characteristic')
+    plt.title('CNN Receiver Operating Characteristic')
     plt.legend(loc="lower right")
+    plt.savefig("CNN_Receiver_Operating_Characteristic.png")
     plt.show()
 
 # For Precision-Recall Curve
@@ -409,8 +412,9 @@ def plot_precision_recall_curve(y_true, y_pred, n_classes):
         plt.plot(recall[i], precision[i], label=f'Precision-recall curve of class {i} (area = {average_precision[i]:.2f})')
     plt.xlabel('Recall')
     plt.ylabel('Precision')
-    plt.title('Precision-Recall curve')
+    plt.title('CNN Precision-Recall curve')
     plt.legend(loc="upper right")
+    plt.savefig("CNN_Precision_Recall_Curve.png")
     plt.show()
 
 # Adjusting t-SNE with appropriate perplexity
@@ -422,7 +426,8 @@ def plot_tsne(features, labels, n_components=2, perplexity=30):
     plt.colorbar(scatter)
     plt.xlabel('TSNE Component 1')
     plt.ylabel('TSNE Component 2')
-    plt.title('t-SNE visualization of Features')
+    plt.title('CNN t-SNE visualization of Features')
+    plt.savefig("CNN_t_SNE_Visualization_of_Features.png")
     plt.show()
 
 
@@ -447,7 +452,8 @@ def plot_heatmap_of_class_activation(model, img, class_idx):
 
     # Display the heatmap
     plt.matshow(heatmap)
-    plt.title('Heatmap of Class Activation')
+    plt.title('CNN Heatmap of Class Activation')
+    plt.savefig("CNN_Heatmap_Of_Class_Activation.png")
     plt.show()
 
 # For Model Architecture Visualization
@@ -462,10 +468,11 @@ def plot_histogram_weights_and_biases(model):
     plt.figure(figsize=(10, 5))
     plt.subplot(1, 2, 1)
     plt.hist(np.concatenate([np.ravel(w) for w in weights]), bins=50)
-    plt.title('Histogram of Weights')
+    plt.title('CNN Histogram of Weights')
     plt.subplot(1, 2, 2)
     plt.hist(np.concatenate([np.ravel(b) for b in biases]), bins=50)
-    plt.title('Histogram of Biases')
+    plt.title('CNN Histogram of Biases')
+    plt.savefig("CNN_Histogram_of_Biases.png")
     plt.show()
 import tensorflow as tf
 
@@ -487,9 +494,10 @@ def plot_learning_rate_scheduler(history):
         return
     plt.figure(figsize=(10, 5))
     plt.plot(lr)
-    plt.title('Learning Rate over Epochs')
+    plt.title('CNN Learning Rate over Epochs')
     plt.xlabel('Epoch')
     plt.ylabel('Learning Rate')
+    plt.savefig("CNN_Learning_rate_Over_Epochs.png")
     plt.show()
 
 
@@ -501,9 +509,10 @@ def plot_gradients_flow(model, inputs, outputs):
     grads = tape.gradient(loss, model.trainable_weights)
     plt.figure(figsize=(10, 5))
     plt.hist([np.max(g) for g in grads if g is not None], bins=20)
-    plt.title('Gradient Flow')
+    plt.title('CNN Gradient Flow')
     plt.xlabel('Maximum Gradient per Layer')
     plt.ylabel('Frequency')
+    plt.savefig("CNN_Gradient_Flow.png")
     plt.show()
 
 # For Attention Maps Visualization
@@ -514,7 +523,8 @@ def plot_attention_maps(model, attention_layer_name, input_data):
     attention_result = attention_model.predict(input_data)
     plt.matshow(attention_result[0], cmap='viridis')
     plt.colorbar()
-    plt.title('Attention Map')
+    plt.title('CNN Attention Map')
+    plt.savefig("CNN_Attention_Map.png")
     plt.show()
 
 
