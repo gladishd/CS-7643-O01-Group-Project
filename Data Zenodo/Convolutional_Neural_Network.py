@@ -49,17 +49,21 @@ files_processed = 0
 for subdir, dirs, files in os.walk(dataset_path):
     for file in files:
         if file.endswith('.wav') and files_processed < max_files:
-            try:
-                emotion_code = file.split('-')[2]
-                emotion = emotion_dict.get(emotion_code, 'unknown')
-                if emotion != 'unknown':
-                    filepath = os.path.join(subdir, file)
-                    S_DB = extract_mel_spectrogram(filepath)
-                    spectrograms.append(S_DB)
-                    labels.append(emotion)
-                    files_processed += 1
-            except Exception as e:
-                print(f"Could not process file {file}: {e}")
+            parts = file.split('-')
+            if len(parts) > 2:
+                try:
+                    emotion_code = parts[2]
+                    emotion = emotion_dict.get(emotion_code, 'unknown')
+                    if emotion != 'unknown':
+                        filepath = os.path.join(subdir, file)
+                        S_DB = extract_mel_spectrogram(filepath)
+                        spectrograms.append(S_DB)
+                        labels.append(emotion)
+                        files_processed += 1
+                except Exception as e:
+                    print(f"Could not process file {file}: {e}")
+            else:
+                print(f"Filename {file} does not match expected format.")
         if files_processed >= max_files:
             break
     if files_processed >= max_files:
@@ -169,9 +173,12 @@ plt.savefig('cnnconfusion_matrix.png')  # Saving the figure
 plt.show()
 
 def plot_predictions(images, predictions, true_labels, class_names):
-    plt.figure(figsize=(15, 5))
-    for i in range(10):
-        plt.subplot(2, 5, i+1)
+    num_images = len(images)
+    num_columns = 5
+    num_rows = np.ceil(num_images / num_columns).astype(int)  # Ensure there's enough room for all images
+    plt.figure(figsize=(15, num_rows * 3))  # Adjust the figure size based on the number of rows
+    for i in range(num_images):
+        plt.subplot(num_rows, num_columns, i+1)
         plt.imshow(images[i].squeeze(), cmap='gray')
         plt.xticks([])
         plt.yticks([])
@@ -181,10 +188,36 @@ def plot_predictions(images, predictions, true_labels, class_names):
     plt.savefig('cnnpredictions_visualization.png')  # Saving the figure
     plt.show()
 
+from sklearn.metrics import classification_report
+# Assuming that the '0' label is not expected and should be mapped to 'unknown'
+emotion_dict['00'] = 'unknown'
+
+# Get unique class labels from both true_classes and predicted_classes
+unique_labels = np.unique(np.concatenate((true_classes, predicted_classes)))
+
+# Check if all unique labels have corresponding entries in emotion_dict
+assert all(str(label).zfill(2) in emotion_dict for label in unique_labels), "Not all labels have entries in emotion_dict"
+
+# Decode labels to original class names using the emotion_dict
+filtered_class_names = [emotion_dict[str(label).zfill(2)] for label in unique_labels]
+
+# Ensure the labels parameter is set to the unique labels
+print(classification_report(true_classes, predicted_classes, labels=unique_labels, target_names=filtered_class_names))
+
+def extract_features(audio_path):
+    y, sr = librosa.load(audio_path)
+    S = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels)
+    S_DB = librosa.power_to_db(S, ref=np.max)
+
+    # Extract other features
+    chroma = librosa.feature.chroma_stft(y=y, sr=sr)
+    spectral_contrast = librosa.feature.spectral_contrast(y=y, sr=sr)
+    tonnetz = librosa.feature.tonnetz(y=y, sr=sr)
+
+    # Stack all features into one array
+    features = np.stack((S_DB, chroma, spectral_contrast, tonnetz), axis=-1)
+    return features
+
 # Assuming you've decoded your labels back to their original values
 class_names = list(emotion_dict.values())
 plot_predictions(X_test, predicted_classes, true_classes, class_names)
-
-from sklearn.metrics import classification_report
-
-print(classification_report(true_classes, predicted_classes, target_names=class_names))
