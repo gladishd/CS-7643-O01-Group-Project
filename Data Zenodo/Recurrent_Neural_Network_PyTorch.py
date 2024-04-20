@@ -7,8 +7,37 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import librosa
-from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import precision_score, recall_score
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.metrics import roc_curve, auc
+
+from itertools import cycle
+
+# Assume binary classification and y_score is the score obtained from the model
+def plot_roc_curve(y_test, y_score, n_classes):
+    # Compute ROC curve and ROC area for each class
+    fpr, tpr, _ = roc_curve(y_test, y_score)
+    roc_auc = auc(fpr, tpr)
+
+    plt.figure(figsize=(7, 7))
+    lw = 2
+    plt.plot(fpr, tpr, color='darkorange', lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic')
+    plt.legend(loc="lower right")
+    plt.show()
+
+# This function should be called from within your validation loop
+# y_test is the true binary label and y_score is the score obtained from the model
+# For multi-class classification, you might need to binarize the output
+# You will need to modify your evaluate_metrics function to return scores instead of just predictions
+
+# Call this function in your main function or where you're handling your evaluation
+# plot_roc_curve(y_true, y_scores, n_classes)
 
 # Constants and dictionary mappings
 n_mels = 128
@@ -21,24 +50,87 @@ emotion_dict = {
     '05': 'angry', '06': 'fearful', '07': 'disgust', '08': 'surprised'
 }
 
-# Function to evaluate model precision and recall
-def evaluate_precision_recall(model, loader):
-    y_true, y_pred = [], []
+from sklearn.preprocessing import label_binarize
+from sklearn.metrics import roc_auc_score
+
+# Assume n_classes is the number of classes and y_score is the score obtained from the model
+def plot_multiclass_roc_curve(y_test, y_score, n_classes):
+    # Binarize the output labels for each class
+    y_test = label_binarize(y_test, classes=[*range(n_classes)])
+    # Compute ROC curve and ROC area for each class
+    fpr = dict()
+    tpr = dict()
+    roc_auc = dict()
+    for i in range(n_classes):
+        fpr[i], tpr[i], _ = roc_curve(y_test[:, i], y_score[:, i])
+        roc_auc[i] = auc(fpr[i], tpr[i])
+
+    # Compute micro-average ROC curve and ROC area
+    fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), y_score.ravel())
+    roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+
+    plt.figure(figsize=(7, 7))
+    plt.plot(fpr["micro"], tpr["micro"],
+             label='micro-average ROC curve (area = {0:0.2f})'
+                   ''.format(roc_auc["micro"]))
+    for i in range(n_classes):
+        plt.plot(fpr[i], tpr[i], lw=2, label='ROC curve of class {0} (area = {1:0.2f})'
+                                             ''.format(i, roc_auc[i]))
+
+    plt.plot([0, 1], [0, 1], 'k--', lw=2)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Multi-class Receiver Operating Characteristic')
+    plt.legend(loc="lower right")
+    plt.show()
+
+# Modify the evaluate_metrics function to return output probabilities (y_scores)
+def evaluate_metrics(model, loader, n_classes):
+    y_true, y_pred, y_score = [], [], []
     model.eval()
     with torch.no_grad():
         for features, labels in loader:
             outputs = model(features)
+            scores = nn.functional.softmax(outputs, dim=1)
             _, predicted = torch.max(outputs, 1)
             y_true.extend(labels.cpu().numpy())
             y_pred.extend(predicted.cpu().numpy())
-    return precision_score(y_true, y_pred, average='macro', zero_division=1), recall_score(y_true, y_pred, average='macro', zero_division=1)
+            y_score.extend(scores.cpu().numpy())
 
-# Function to extract mel spectrogram features from audio
+    precision = precision_score(y_true, y_pred, average='macro', zero_division=1)
+    recall = recall_score(y_true, y_pred, average='macro', zero_division=1)
+    f1 = f1_score(y_true, y_pred, average='macro', zero_division=1)
+    return y_true, y_pred, y_score, precision, recall, f1
+
+# Call the plot_multiclass_roc_curve function in your main function
+# after you have collected the true labels and output scores
+
+
+# # Function to evaluate model metrics
+# def evaluate_metrics(model, loader):
+#     y_true, y_pred = [], []
+#     model.eval()
+#     with torch.no_grad():
+#         for features, labels in loader:
+#             outputs = model(features)
+#             _, predicted = torch.max(outputs, 1)
+#             y_true.extend(labels.cpu().numpy())
+#             y_pred.extend(predicted.cpu().numpy())
+#     precision = precision_score(y_true, y_pred, average='macro', zero_division=1)
+#     recall = recall_score(y_true, y_pred, average='macro', zero_division=1)
+#     f1 = f1_score(y_true, y_pred, average='macro', zero_division=1)
+#     return precision, recall, f1
+
+# Function to extract and normalize mel spectrogram features from audio
 def extract_features(audio_path):
     y, sr = librosa.load(audio_path)
     mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels)
     mel_spectrogram_db = librosa.power_to_db(mel_spectrogram, ref=np.max)
-    return mel_spectrogram_db.T
+    scaler = StandardScaler()
+    scaled_features = scaler.fit_transform(mel_spectrogram_db.T)
+    return scaled_features
 
 # Custom dataset class for audio files
 class AudioDataset(Dataset):
@@ -52,19 +144,21 @@ class AudioDataset(Dataset):
     def __getitem__(self, idx):
         return torch.tensor(self.X[idx], dtype=torch.float32), torch.tensor(self.y[idx], dtype=torch.long)
 
-# RNN model definition using LSTM
+# RNN model definition using LSTM with an additional dense layer
 class RNNModel(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, num_classes):
         super(RNNModel, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
-        self.fc = nn.Linear(hidden_size, num_classes)
+        self.fc1 = nn.Linear(hidden_size, hidden_size)  # Additional dense layer
+        self.fc2 = nn.Linear(hidden_size, num_classes)
 
     def forward(self, x):
         h0, c0 = self._init_hidden(x.size(0), x.device)
         out, _ = self.lstm(x, (h0, c0))
-        out = self.fc(out[:, -1, :])
+        out = self.fc1(out[:, -1, :])
+        out = self.fc2(out)
         return out
 
     def _init_hidden(self, batch_size, device):
@@ -80,7 +174,6 @@ def display_model_parameters(model):
     ax.axis('off')
     ax.axis('tight')
     ax.table(cellText=df.values, colLabels=df.columns, loc='center', cellLoc='center', colColours=["#f1f1f2"]*3)
-    plt.savefig("RNNPyTorch_display_model_parameters.png")
     plt.show()
 
 # Function to process the dataset and return data loaders
@@ -109,11 +202,24 @@ def process_dataset(dataset_paths, max_files, emotion_dict, label_encoder):
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
     return train_loader, test_loader
 
-def train_model(model, train_loader, test_loader, criterion, optimizer, num_epochs=10):
-    losses = []
-    precisions = []
-    recalls = []
-    accuracies = []  # List to store accuracy for each epoch
+def main():
+    label_encoder = LabelEncoder()
+    dataset_paths = ['Audio_Speech_Actors_01-24_split', 'Audio_Song_Actors_01-24_split']
+    train_loader, test_loader = process_dataset(dataset_paths, max_files, emotion_dict, label_encoder)
+    model = RNNModel(input_size=n_mels, hidden_size=128, num_layers=2, num_classes=n_classes)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.5, patience=3)
+    best_f1 = 0
+    early_stop_count = 0
+    num_epochs = 10
+
+    losses = []  # List to store loss for each epoch
+    precisions = []  # List to store precision for each epoch
+    recalls = []  # List to store recall for each epoch
+    f1_scores = []  # List to store F1-score for each epoch
+    all_y_true = []  # List to store all true labels
+    all_y_scores = []  # List to store all output scores
 
     for epoch in range(num_epochs):
         model.train()
@@ -125,26 +231,31 @@ def train_model(model, train_loader, test_loader, criterion, optimizer, num_epoc
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
-        avg_loss = total_loss / len(train_loader)
-        losses.append(avg_loss)
+        losses.append(total_loss / len(train_loader))
 
-        model.eval()  # Set the model to evaluation mode for validation
-        correct = 0
-        total = 0
-        with torch.no_grad():
-            for features, labels in test_loader:
-                outputs = model(features)
-                _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
-        accuracy = correct / total
-        accuracies.append(accuracy)  # Append accuracy for the epoch
-
-        precision, recall = evaluate_precision_recall(model, test_loader)
+        # Validation phase
+        y_true, y_pred, y_scores, precision, recall, f1 = evaluate_metrics(model, test_loader, n_classes)
+        all_y_true.extend(y_true)
+        all_y_scores.extend(y_scores)
         precisions.append(precision)
         recalls.append(recall)
+        f1_scores.append(f1)
 
-        print(f'Epoch {epoch+1}/{num_epochs}, Loss: {avg_loss}, Precision: {precision}, Recall: {recall}, Accuracy: {accuracy}')
+        scheduler.step(f1)
+        if f1 > best_f1:
+            best_f1 = f1
+            early_stop_count = 0
+            torch.save(model.state_dict(), 'best_model.pth')
+        else:
+            early_stop_count += 1
+            if early_stop_count > 5:
+                print("Early stopping triggered.")
+                break
+
+        print(f'Epoch {epoch+1}, Loss: {total_loss / len(train_loader)}, Precision: {precision}, Recall: {recall}, F1-Score: {f1}')
+
+    model.load_state_dict(torch.load('best_model.pth'))
+    display_model_parameters(model)
 
     plt.figure(figsize=(10, 5))
     plt.subplot(1, 2, 1)
@@ -175,37 +286,53 @@ def train_model(model, train_loader, test_loader, criterion, optimizer, num_epoc
     plt.grid(True)
 
     plt.subplot(1, 4, 2)
-    plt.plot(range(1, num_epochs + 1), accuracies, label='Accuracy', color='b')
-    plt.title('Validation Accuracy')
-    plt.xlabel('Epoch')
-    plt.ylabel('Accuracy')
-    plt.grid(True)
-
-    plt.subplot(1, 4, 3)
     plt.plot(range(1, num_epochs + 1), precisions, label='Precision', color='r')
     plt.title('Precision over Epochs')
     plt.xlabel('Epoch')
     plt.ylabel('Precision')
     plt.grid(True)
 
-    plt.subplot(1, 4, 4)
+    plt.subplot(1, 4, 3)
     plt.plot(range(1, num_epochs + 1), recalls, label='Recall', color='g')
     plt.title('Recall over Epochs')
     plt.xlabel('Epoch')
     plt.ylabel('Recall')
     plt.grid(True)
 
+    plt.subplot(1, 4, 4)
+    plt.plot(range(1, num_epochs + 1), f1_scores, label='F1-Score', color='b')
+    plt.title('F1-Score over Epochs')
+    plt.xlabel('Epoch')
+    plt.ylabel('F1-Score')
+    plt.grid(True)
+
     plt.tight_layout()
-    plt.savefig("RNNPyTorch_precision_over_epochs_recall_over_epochs.png")
+    plt.savefig("RNNPyTorch_Training_Metrics.png")
     plt.show()
 
-if __name__ == "__main__":
-    label_encoder = LabelEncoder()
-    dataset_paths = ['Audio_Speech_Actors_01-24_split', 'Audio_Song_Actors_01-24_split']
-    train_loader, test_loader = process_dataset(dataset_paths, max_files, emotion_dict, label_encoder)
-    model = RNNModel(input_size=n_mels, hidden_size=128, num_layers=2, num_classes=n_classes)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    # Plot the training results
+    plt.figure(figsize=(10, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(losses, label='Training Loss')
+    plt.title('Training Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
 
-    train_model(model, train_loader, test_loader, criterion, optimizer)
-    display_model_parameters(model)
+    plt.subplot(1, 2, 2)
+    plt.plot(precisions, label='Precision')
+    plt.plot(recalls, label='Recall')
+    plt.title('Precision and Recall')
+    plt.xlabel('Epoch')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("RNNPyTorch_Training_Loss_and_Precision_And_Recall.png")
+    plt.show()
+
+    # ROC Curve plotting after training completes
+    y_true_np = np.array(all_y_true)
+    y_scores_np = np.array(all_y_scores)
+    plot_multiclass_roc_curve(y_true_np, y_scores_np, n_classes)
+
+if __name__ == "__main__":
+    main()
