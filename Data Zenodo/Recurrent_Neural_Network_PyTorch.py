@@ -2,31 +2,41 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
-from sklearn.preprocessing import LabelEncoder
-import librosa
 import numpy as np
 import os
+import pandas as pd
 import matplotlib.pyplot as plt
-from torch.optim import Adam
+import librosa
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import precision_score, recall_score
 
-# Parameters
+# Constants and dictionary mappings
 n_mels = 128
 hop_length = 512
 n_fft = 2048
-n_classes = 8  # Number of emotional categories
-max_files = 100  # Adjust based on your dataset size for initial experiments
-
-# Emotion labels from a hypothetical dataset
+n_classes = 8
+max_files = 100
 emotion_dict = {
     '01': 'neutral', '02': 'calm', '03': 'happy', '04': 'sad',
     '05': 'angry', '06': 'fearful', '07': 'disgust', '08': 'surprised'
 }
 
+# Function to evaluate model precision and recall
+def evaluate_precision_recall(model, loader):
+    y_true, y_pred = [], []
+    model.eval()
+    with torch.no_grad():
+        for features, labels in loader:
+            outputs = model(features)
+            _, predicted = torch.max(outputs, 1)
+            y_true.extend(labels.cpu().numpy())
+            y_pred.extend(predicted.cpu().numpy())
+    return precision_score(y_true, y_pred, average='macro', zero_division=1), recall_score(y_true, y_pred, average='macro', zero_division=1)
+
 # Function to extract mel spectrogram features from audio
 def extract_features(audio_path):
     y, sr = librosa.load(audio_path)
-    mel_spectrogram = librosa.feature.melspectrogram(
-        y=y, sr=sr, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels)
+    mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, n_fft=n_fft, hop_length=hop_length, n_mels=n_mels)
     mel_spectrogram_db = librosa.power_to_db(mel_spectrogram, ref=np.max)
     return mel_spectrogram_db.T
 
@@ -52,11 +62,26 @@ class RNNModel(nn.Module):
         self.fc = nn.Linear(hidden_size, num_classes)
 
     def forward(self, x):
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
+        h0, c0 = self._init_hidden(x.size(0), x.device)
         out, _ = self.lstm(x, (h0, c0))
         out = self.fc(out[:, -1, :])
         return out
+
+    def _init_hidden(self, batch_size, device):
+        return (torch.zeros(self.num_layers, batch_size, self.hidden_size).to(device),
+                torch.zeros(self.num_layers, batch_size, self.hidden_size).to(device))
+
+# Generate and display a summary table of model parameters
+def display_model_parameters(model):
+    params = [{"Parameter Name": name, "Size": str(param.size()), "Number of Params": param.numel()} for name, param in model.named_parameters()]
+    df = pd.DataFrame(params)
+    print(df)
+    fig, ax = plt.subplots(figsize=(8, 3))
+    ax.axis('off')
+    ax.axis('tight')
+    ax.table(cellText=df.values, colLabels=df.columns, loc='center', cellLoc='center', colColours=["#f1f1f2"]*3)
+    plt.savefig("RNNPyTorch_display_model_parameters.png")
+    plt.show()
 
 # Function to process the dataset and return data loaders
 def process_dataset(dataset_paths, max_files, emotion_dict, label_encoder):
@@ -84,108 +109,103 @@ def process_dataset(dataset_paths, max_files, emotion_dict, label_encoder):
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
     return train_loader, test_loader
 
-# Enhanced training function with tracking and visualization of metrics
-def train_model(model, train_loader, test_loader, criterion, optimizer, num_epochs):
-    model.train()
-    train_losses = []
-    validation_accuracies = []
+def train_model(model, train_loader, test_loader, criterion, optimizer, num_epochs=10):
+    losses = []
+    precisions = []
+    recalls = []
+    accuracies = []  # List to store accuracy for each epoch
 
     for epoch in range(num_epochs):
+        model.train()
         total_loss = 0
-        for i, (features, labels) in enumerate(train_loader):
+        for features, labels in train_loader:
             optimizer.zero_grad()
             outputs = model(features)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
+        avg_loss = total_loss / len(train_loader)
+        losses.append(avg_loss)
 
-        train_losses.append(total_loss / len(train_loader))
-
-        # Validation accuracy
-        model.eval()
-        correct, total = 0, 0
+        model.eval()  # Set the model to evaluation mode for validation
+        correct = 0
+        total = 0
         with torch.no_grad():
             for features, labels in test_loader:
                 outputs = model(features)
                 _, predicted = torch.max(outputs.data, 1)
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
+        accuracy = correct / total
+        accuracies.append(accuracy)  # Append accuracy for the epoch
 
-        validation_accuracy = correct / total
-        validation_accuracies.append(validation_accuracy)
-        print(f'Epoch {epoch+1}/{num_epochs}, Loss: {train_losses[-1]:.4f}, Validation Accuracy: {validation_accuracy:.4f}')
+        precision, recall = evaluate_precision_recall(model, test_loader)
+        precisions.append(precision)
+        recalls.append(recall)
 
-    # Plotting the training loss and validation accuracy
-    plt.figure(figsize=(12, 5))
+        print(f'Epoch {epoch+1}/{num_epochs}, Loss: {avg_loss}, Precision: {precision}, Recall: {recall}, Accuracy: {accuracy}')
+
+    plt.figure(figsize=(10, 5))
     plt.subplot(1, 2, 1)
-    plt.plot(train_losses, label='Training Loss')
+    plt.plot(losses, label='Training Loss')
     plt.title('Training Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend()
 
     plt.subplot(1, 2, 2)
-    plt.plot(validation_accuracies, label='Validation Accuracy')
+    plt.plot(precisions, label='Precision')
+    plt.plot(recalls, label='Recall')
+    plt.title('Precision and Recall')
+    plt.xlabel('Epoch')
+    plt.legend()
+
+    plt.tight_layout()
+    plt.savefig("RNNPyTorch_Training_Loss_and_Precision_And_Recall.png")
+    plt.show()
+
+    # Plotting the training results
+    plt.figure(figsize=(16, 4))
+    plt.subplot(1, 4, 1)
+    plt.plot(range(1, num_epochs + 1), losses, label='Loss')
+    plt.title('Training Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.grid(True)
+
+    plt.subplot(1, 4, 2)
+    plt.plot(range(1, num_epochs + 1), accuracies, label='Accuracy', color='b')
     plt.title('Validation Accuracy')
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy')
-    plt.legend()
-    plt.savefig("RNN_PyTorch_Training_Loss_and_Validation_Accuracy.png")
+    plt.grid(True)
+
+    plt.subplot(1, 4, 3)
+    plt.plot(range(1, num_epochs + 1), precisions, label='Precision', color='r')
+    plt.title('Precision over Epochs')
+    plt.xlabel('Epoch')
+    plt.ylabel('Precision')
+    plt.grid(True)
+
+    plt.subplot(1, 4, 4)
+    plt.plot(range(1, num_epochs + 1), recalls, label='Recall', color='g')
+    plt.title('Recall over Epochs')
+    plt.xlabel('Epoch')
+    plt.ylabel('Recall')
+    plt.grid(True)
+
+    plt.tight_layout()
+    plt.savefig("RNNPyTorch_precision_over_epochs_recall_over_epochs.png")
     plt.show()
 
-# Initialize model and train
-model = RNNModel(input_size=n_mels, hidden_size=128, num_layers=2, num_classes=n_classes)
-criterion = nn.CrossEntropyLoss()
-optimizer = Adam(model.parameters(), lr=0.001)
-dataset_paths = ['Audio_Speech_Actors_01-24_split', 'Audio_Song_Actors_01-24_split']
-label_encoder = LabelEncoder()
-train_loader, test_loader = process_dataset(dataset_paths, max_files, emotion_dict, label_encoder)
-train_model(model, train_loader, test_loader, criterion, optimizer, num_epochs=10)
+if __name__ == "__main__":
+    label_encoder = LabelEncoder()
+    dataset_paths = ['Audio_Speech_Actors_01-24_split', 'Audio_Song_Actors_01-24_split']
+    train_loader, test_loader = process_dataset(dataset_paths, max_files, emotion_dict, label_encoder)
+    model = RNNModel(input_size=n_mels, hidden_size=128, num_layers=2, num_classes=n_classes)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-def print_model_summary(model):
-    print("Model Summary:")
-    for idx, (name, param) in enumerate(model.named_parameters()):
-        print(f"{idx+1}. {name} - {param.shape}")
-
-from sklearn.metrics import precision_score, recall_score
-
-def evaluate_precision_recall(model, loader):
-    y_true, y_pred = [], []
-    model.eval()
-    with torch.no_grad():
-        for features, labels in loader:
-            outputs = model(features)
-            _, predicted = torch.max(outputs, 1)
-            y_true.extend(labels.cpu().numpy())
-            y_pred.extend(predicted.cpu().numpy())
-
-    precision = precision_score(y_true, y_pred, average='macro')
-    recall = recall_score(y_true, y_pred, average='macro')
-    return precision, recall
-
-# Usage:
-precision, recall = evaluate_precision_recall(model, test_loader)
-
-from sklearn.metrics import confusion_matrix
-import seaborn as sns
-
-def plot_confusion_matrix(model, loader):
-    y_true, y_pred = [], []
-    model.eval()
-    with torch.no_grad():
-        for features, labels in loader:
-            outputs = model(features)
-            _, predicted = torch.max(outputs, 1)
-            y_true.extend(labels.cpu().numpy())
-            y_pred.extend(predicted.cpu().numpy())
-
-    cm = confusion_matrix(y_true, y_pred)
-    sns.heatmap(cm, annot=True, fmt='d')
-    plt.xlabel('Predicted')
-    plt.ylabel('True')
-    plt.savefig("RNN_PyTorch_Confusion_Matrix.png")
-    plt.show()
-
-# Usage:
-plot_confusion_matrix(model, test_loader)
+    train_model(model, train_loader, test_loader, criterion, optimizer)
+    display_model_parameters(model)
