@@ -4,10 +4,12 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
 import librosa
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Define CNN Model
 class CNN(nn.Module):
@@ -92,12 +94,16 @@ def extract_mel_spectrogram(audio_path):
     return S_DB
 
 # Training the model and tracking metrics
-def train_model(num_epochs, model, train_loader, test_loader, criterion, optimizer, save_path):
+def train_model(num_epochs, model, train_loader, test_loader, criterion, optimizer, dataset_name):
     # Lists to track progress
     epoch_losses = []
     epoch_accuracies = []
     val_losses = []
     val_accuracies = []
+
+    # Prepare filenames for saving training progress and confusion matrix
+    training_progress_filename = f"cnn_training_progress_{dataset_name}.png"
+    confusion_matrix_filename = f"confusion_matrix_{dataset_name}.png"
 
     for epoch in range(num_epochs):
         model.train()  # Set model to training mode
@@ -146,26 +152,49 @@ def train_model(num_epochs, model, train_loader, test_loader, criterion, optimiz
 
         print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.2f}%, Val Loss: {val_epoch_loss:.4f}, Val Accuracy: {val_epoch_accuracy:.2f}%')
 
-    # Plot training and validation loss
+    # Plot training and validation loss and accuracy
     plt.figure(figsize=(12, 6))
     plt.subplot(1, 2, 1)
     plt.plot(epoch_losses, label='Training Loss')
     plt.plot(val_losses, label='Validation Loss')
-    plt.title('Training and Validation Loss')
+    plt.title('CNN PyTorch - Training and Validation Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend()
 
-    # Plot training and validation accuracy
     plt.subplot(1, 2, 2)
     plt.plot(epoch_accuracies, label='Training Accuracy')
     plt.plot(val_accuracies, label='Validation Accuracy')
-    plt.title('Training and Validation Accuracy')
+    plt.title('CNN PyTorch - Training and Validation Accuracy')
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy')
     plt.legend()
-    plt.savefig(save_path)
+    plt.savefig(training_progress_filename)
     plt.show()
+    plt.close()
+
+    # Generate and save the confusion matrix
+    all_preds = []
+    all_true = []
+    model.eval()
+    with torch.no_grad():
+        for data in test_loader:
+            spectrograms, labels = data
+            outputs = model(spectrograms)
+            _, predicted = torch.max(outputs.data, 1)
+            all_preds.extend(predicted.numpy())
+            all_true.extend(labels.numpy())
+
+    cm = confusion_matrix(all_true, all_preds)
+    plt.figure(figsize=(10, 7))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+    plt.title('CNN PyTorch - Confusion Matrix for ' + dataset_name)
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+    plt.savefig(confusion_matrix_filename)
+    plt.show()
+    plt.close()
+
 
 # Parameters
 n_mels = 128
@@ -187,7 +216,10 @@ for dataset_path in dataset_paths:
     X, encoded_labels, max_length = process_dataset(dataset_path, emotion_dict, n_mels, n_fft, hop_length, max_files)
 
     # Split and create DataLoaders
-    X_train, X_test, y_train, y_test = train_test_split(X, encoded_labels, test_size=0.2, random_state=42)
+    # Split the dataset into training and testing sets with a specific random_state for reproducibility
+    X_train, X_test, y_train, y_test = train_test_split(X, encoded_labels, test_size=0.2, random_state=42, stratify=encoded_labels)
+    print(f"Training set size: {len(X_train)}, Testing set size: {len(X_test)}")
+
     train_dataset = AudioDataset(X_train, y_train)
     test_dataset = AudioDataset(X_test, y_test)
     train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
@@ -201,3 +233,82 @@ for dataset_path in dataset_paths:
     # Train the model on this dataset
     print(f"Training on dataset: {dataset_path}")
     train_model(10, model, train_loader, test_loader, criterion, optimizer, f"cnn_training_{dataset_path}.png")
+
+import random
+
+# Global definition (if chosen)
+label_encoder = LabelEncoder()
+
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+
+# Assuming emotion_dict and other necessary imports and functions are defined as before
+
+def process_dataset(dataset_path, emotion_dict, n_mels, n_fft, hop_length, max_files):
+    spectrograms = []
+    labels = []
+    files_processed = 0
+
+    for subdir, dirs, files in os.walk(dataset_path):
+        for file in files:
+            if file.endswith('.wav') and files_processed < max_files:
+                emotion = os.path.basename(subdir)
+                if emotion in emotion_dict:
+                    filepath = os.path.join(subdir, file)
+                    S_DB = extract_mel_spectrogram(filepath)
+                    spectrograms.append(S_DB)
+                    labels.append(emotion)
+                    files_processed += 1
+
+    if not labels:
+        raise ValueError("No labels processed. Ensure that your directories contain the correct files.")
+
+    label_encoder = LabelEncoder()
+    encoded_labels = label_encoder.fit_transform(labels)
+
+    if not spectrograms:
+        raise ValueError("No spectrograms processed. Check the dataset path and contents.")
+
+    max_length = max(s.shape[1] for s in spectrograms)
+    X = np.array([librosa.util.fix_length(s, size=max_length, axis=1) for s in spectrograms])
+    X = X[..., np.newaxis]
+    X = np.transpose(X, (0, 3, 1, 2))
+
+    return X, encoded_labels, label_encoder
+
+# Then use the returned label_encoder in your visualization function
+X, encoded_labels, label_encoder = process_dataset(dataset_path, emotion_dict, n_mels, n_fft, hop_length, max_files)
+
+
+def visualize_predictions(model, test_loader, label_encoder, num_images=5):
+    model.eval()
+    data_iter = iter(test_loader)
+    plt.figure(figsize=(15, 5 * num_images))  # Adjust the size dynamically based on num_images
+
+    actual_num_images = min(num_images, len(test_loader.dataset))
+    if actual_num_images < num_images:
+        print(f"Warning: Only {actual_num_images} images available for visualization.")
+
+    try:
+        for i in range(actual_num_images):
+            spectrograms, labels = next(data_iter)
+            outputs = model(spectrograms)
+            _, predicted = torch.max(outputs, 1)
+            predicted_labels = label_encoder.inverse_transform(predicted.numpy())
+            true_labels = label_encoder.inverse_transform(labels.numpy())
+
+            plt.subplot(actual_num_images, 1, i + 1)
+            plt.imshow(spectrograms[0][0].cpu(), aspect='auto', origin='lower')
+            plt.title(f'CNN PyTorch - Predicted: {predicted_labels[0]}, Actual: {true_labels[0]}')
+            plt.colorbar(format='%+2.0f dB')
+
+    except StopIteration:
+        pass  # Handled by checking actual_num_images
+    plt.tight_layout()
+    plt.savefig("CNN_PyTorch_visualize_predictions_spectrogram.png")
+    plt.show()
+
+
+
+# After training and evaluation
+visualize_predictions(model, test_loader, label_encoder)

@@ -29,6 +29,7 @@ def plot_roc_curve(y_test, y_score, n_classes):
     plt.ylabel('True Positive Rate')
     plt.title('Receiver Operating Characteristic')
     plt.legend(loc="lower right")
+    plt.savefig("RNN_ROCPyTorch_RNN.png")
     plt.show()
 
 # This function should be called from within your validation loop
@@ -84,6 +85,7 @@ def plot_multiclass_roc_curve(y_test, y_score, n_classes):
     plt.ylabel('True Positive Rate')
     plt.title('Multi-class Receiver Operating Characteristic')
     plt.legend(loc="lower right")
+    plt.savefig("RNN_ROC_PyToRCH_Multiclass.png")
     plt.show()
 
 # Modify the evaluate_metrics function to return output probabilities (y_scores)
@@ -174,6 +176,7 @@ def display_model_parameters(model):
     ax.axis('off')
     ax.axis('tight')
     ax.table(cellText=df.values, colLabels=df.columns, loc='center', cellLoc='center', colColours=["#f1f1f2"]*3)
+    plt.savefig("RNN_PyTorch_Display_Model_Params.png")
     plt.show()
 
 # Function to process the dataset and return data loaders
