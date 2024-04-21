@@ -6,7 +6,7 @@ from tensorflow.keras.layers import Conv1D, Dense, Flatten, Dropout
 from sklearn.model_selection import train_test_split
 
 # Step up to the parent folder
-os.chdir('..')
+#os.chdir('..')
 
 # Path to the Audio_Speech_Actors_01-24 folder
 path_to_actors = 'Audio_Speech_Actors_01-24'

@@ -11,6 +11,13 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+# Folder path where you want to save the plots
+output_folder = "Convolutional_Neural_Network_PyTorch_Images"
+
+# Check if the folder exists, if not, create it
+if not os.path.exists(output_folder):
+    os.makedirs(output_folder)
+
 # Define CNN Model
 class CNN(nn.Module):
     def __init__(self, num_classes, n_mels, max_length):
@@ -169,7 +176,7 @@ def train_model(num_epochs, model, train_loader, test_loader, criterion, optimiz
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy')
     plt.legend()
-    plt.savefig(training_progress_filename)
+    plt.savefig(os.path.join(output_folder, training_progress_filename))
     plt.show()
     plt.close()
 
@@ -191,7 +198,7 @@ def train_model(num_epochs, model, train_loader, test_loader, criterion, optimiz
     plt.title('CNN PyTorch - Confusion Matrix for ' + dataset_name)
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-    plt.savefig(confusion_matrix_filename)
+    plt.savefig(os.path.join(output_folder, confusion_matrix_filename))
     plt.show()
     plt.close()
 
@@ -305,7 +312,7 @@ def visualize_predictions(model, test_loader, label_encoder, num_images=5):
     except StopIteration:
         pass  # Handled by checking actual_num_images
     plt.tight_layout()
-    plt.savefig("CNN_PyTorch_visualize_predictions_spectrogram.png")
+    plt.savefig(os.path.join(output_folder, "CNN_PyTorch_visualize_predictions_spectrogram.png"))
     plt.show()
 
 

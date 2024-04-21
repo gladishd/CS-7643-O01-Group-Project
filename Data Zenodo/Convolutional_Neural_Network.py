@@ -9,6 +9,8 @@ from sklearn.model_selection import train_test_split
 import tensorflow_model_optimization as tfmot
 import matplotlib.pyplot as plt
 
+os.makedirs('Convolutional_Neural_Network_Keras_Images', exist_ok=True)
+
 # TensorFlow Model Optimization Toolkit specific imports for sparsity
 sparsity = tfmot.sparsity.keras
 
@@ -138,7 +140,7 @@ plt.title('Model accuracy')
 plt.ylabel('Accuracy')
 plt.xlabel('Epoch')
 plt.legend(['Train', 'Test'], loc='upper left')
-plt.savefig('cnnmodel_accuracy.png')  # Saving the figure
+plt.savefig('Convolutional_Neural_Network_Keras_Images/cnnmodel_accuracy.png')
 plt.show()
 
 # Plot training & validation loss values
@@ -148,7 +150,7 @@ plt.title('Model loss')
 plt.ylabel('Loss')
 plt.xlabel('Epoch')
 plt.legend(['Train', 'Test'], loc='upper left')
-plt.savefig('cnnmodel_loss.png')  # Saving the figure
+plt.savefig('Convolutional_Neural_Network_Keras_Images/cnnmodel_loss.png')
 plt.show()
 
 
@@ -169,7 +171,7 @@ sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
 plt.title('Confusion Matrix')
 plt.ylabel('True label')
 plt.xlabel('Predicted label')
-plt.savefig('cnnconfusion_matrix.png')  # Saving the figure
+plt.savefig('Convolutional_Neural_Network_Keras_Images/cnnconfusion_matrix.png')
 plt.show()
 
 def plot_predictions(images, predictions, true_labels, class_names):
@@ -185,7 +187,7 @@ def plot_predictions(images, predictions, true_labels, class_names):
         col = 'green' if predictions[i] == true_labels[i] else 'red'
         plt.xlabel(f'Pred: {class_names[predictions[i]]}\nTrue: {class_names[true_labels[i]]}', color=col)
     plt.tight_layout()
-    plt.savefig('cnnpredictions_visualization.png')  # Saving the figure
+    plt.savefig('Convolutional_Neural_Network_Keras_Images/cnnpredictions_visualization.png')
     plt.show()
 
 from sklearn.metrics import classification_report

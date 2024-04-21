@@ -17,6 +17,7 @@ from tensorflow.keras.regularizers import l2
 from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard, Callback
 from sklearn.metrics import confusion_matrix, classification_report
 
+os.makedirs('Recurrent_Neural_Network_Keras_Images', exist_ok=True)
 
 # Parameters
 n_mels = 128
@@ -108,8 +109,7 @@ plt.title('RNN Model Accuracy')
 plt.ylabel('Accuracy')
 plt.xlabel('Epoch')
 plt.legend(['Train', 'Test'], loc='upper left')
-plt.savefig("rnn_model accuracy.png")
-plt.savefig("new rnn accuracy.png")
+plt.savefig("Recurrent_Neural_Network_Keras_Images/rnn_model_accuracy.png")
 plt.show()
 
 plt.plot(history.history['loss'])
@@ -118,7 +118,7 @@ plt.title('RNN Model Loss')
 plt.ylabel('Loss')
 plt.xlabel('Epoch')
 plt.legend(['Train', 'Test'], loc='upper left')
-plt.savefig("rnn_model loss.png")
+plt.savefig("Recurrent_Neural_Network_Keras_Images/rnn_model_loss.png")
 plt.show()
 
 import matplotlib.pyplot as plt
@@ -151,7 +151,7 @@ def plot_model_summary(summary):
             tb.add_cell(i, j, width, height, text=cell, loc='center')
 
     ax.add_table(tb)
-    plt.savefig("RNN model summary.png")
+    plt.savefig("Recurrent_Neural_Network_Keras_Images/RNN_model_summary.png")
     plt.show()
 
 # Example usage with your model summary
@@ -204,7 +204,7 @@ plt.title('RNN Model Accuracy with Bidirectional LSTM')
 plt.ylabel('Accuracy')
 plt.xlabel('Epoch')
 plt.legend()
-plt.savefig("rnn_model_bidirectional_accuracy.png")
+plt.savefig("Recurrent_Neural_Network_Keras_Images/rnn_model_bidirectional_accuracy.png")
 plt.show()
 
 # Plot loss
@@ -215,7 +215,7 @@ plt.title('RNN Model Loss with Bidirectional LSTM')
 plt.ylabel('Loss')
 plt.xlabel('Epoch')
 plt.legend()
-plt.savefig("rnn_model_bidirectional_loss.png")
+plt.savefig("Recurrent_Neural_Network_Keras_Images/rnn_model_bidirectional_loss.png")
 plt.show()
 
 
@@ -273,7 +273,7 @@ plt.title('RNN Model Precision')
 plt.ylabel('Precision')
 plt.xlabel('Epoch')
 plt.legend()
-plt.savefig("rnn_model_precision.png")
+plt.savefig("Recurrent_Neural_Network_Keras_Images/rnn_model_precision.png")
 plt.show()
 
 plt.figure(figsize=(8, 5))
@@ -283,7 +283,7 @@ plt.title('RNN Model Recall')
 plt.ylabel('Recall')
 plt.xlabel('Epoch')
 plt.legend()
-plt.savefig("rnn_model_recall.png")
+plt.savefig("Recurrent_Neural_Network_Keras_Images/rnn_model_recall.png")
 plt.show()
 
 # Save the model in the preferred Keras format
@@ -369,7 +369,7 @@ plt.xlabel('Epoch')
 plt.ylabel('Recall')
 plt.legend()
 plt.tight_layout()
-plt.savefig("rnn_model_precision_recall.png")
+plt.savefig("Recurrent_Neural_Network_Keras_Images/rnn_model_precision_recall.png")
 plt.show()
 
 # Load the best saved model
@@ -436,7 +436,7 @@ def print_classification_report_and_confusion_matrix(y_true, y_pred):
     sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues')
     plt.xlabel('Predicted Label')
     plt.ylabel('True Label')
-    plt.savefig("new rnn predicted classification report.png")
+    plt.savefig("Recurrent_Neural_Network_Keras_Images/new rnn predicted classification report.png")
     plt.show()
 
 # After model training
@@ -510,7 +510,7 @@ plt.figure(figsize=(10, 8))
 sns.heatmap(conf_matrix, annot=True, fmt='g', cmap='Blues')
 plt.xlabel('RNN Predicted labels')
 plt.ylabel('True labels')
-plt.savefig("new rnn predicted label report.png")
+plt.savefig("Recurrent_Neural_Network_Keras_Images/new rnn predicted label report.png")
 plt.show()
 
 
@@ -593,7 +593,7 @@ def plot_confusion_matrix(y_true, y_pred, classes, normalize=False, title='Confu
     plt.tight_layout()
     plt.ylabel('RNN True label')
     plt.xlabel('Predicted label')
-    plt.savefig("new rnn predicted confusion report.png")
+    plt.savefig("Recurrent_Neural_Network_Keras_Images/new rnn predicted confusion report.png")
     plt.show()
 
 # Convert predictions from one-hot encoding to labels

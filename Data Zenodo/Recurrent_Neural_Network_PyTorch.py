@@ -10,8 +10,8 @@ import librosa
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.metrics import roc_curve, auc
-
 from itertools import cycle
+os.makedirs('Recurrent_Neural_Network_PyTorch_Images', exist_ok=True)
 
 # Assume binary classification and y_score is the score obtained from the model
 def plot_roc_curve(y_test, y_score, n_classes):
@@ -29,7 +29,7 @@ def plot_roc_curve(y_test, y_score, n_classes):
     plt.ylabel('True Positive Rate')
     plt.title('Receiver Operating Characteristic')
     plt.legend(loc="lower right")
-    plt.savefig("RNN_ROCPyTorch_RNN.png")
+    plt.savefig("Recurrent_Neural_Network_PyTorch_Images/RNN_ROCPyTorch_RNN.png")
     plt.show()
 
 # This function should be called from within your validation loop
@@ -85,7 +85,7 @@ def plot_multiclass_roc_curve(y_test, y_score, n_classes):
     plt.ylabel('True Positive Rate')
     plt.title('Multi-class Receiver Operating Characteristic')
     plt.legend(loc="lower right")
-    plt.savefig("RNN_ROC_PyToRCH_Multiclass.png")
+    plt.savefig("Recurrent_Neural_Network_PyTorch_Images/RNN_ROC_PyToRCH_Multiclass.png")
     plt.show()
 
 # Modify the evaluate_metrics function to return output probabilities (y_scores)
@@ -176,7 +176,7 @@ def display_model_parameters(model):
     ax.axis('off')
     ax.axis('tight')
     ax.table(cellText=df.values, colLabels=df.columns, loc='center', cellLoc='center', colColours=["#f1f1f2"]*3)
-    plt.savefig("RNN_PyTorch_Display_Model_Params.png")
+    plt.savefig("Recurrent_Neural_Network_PyTorch_Images/RNN_PyTorch_Display_Model_Params.png")
     plt.show()
 
 # Function to process the dataset and return data loaders
@@ -276,7 +276,7 @@ def main():
     plt.legend()
 
     plt.tight_layout()
-    plt.savefig("RNNPyTorch_Training_Loss_and_Precision_And_Recall.png")
+    plt.savefig("Recurrent_Neural_Network_PyTorch_Images/RNNPyTorch_Training_Loss_and_Precision_And_Recall.png")
     plt.show()
 
     # Plotting the training results
@@ -310,7 +310,7 @@ def main():
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig("RNNPyTorch_Training_Metrics.png")
+    plt.savefig("Recurrent_Neural_Network_PyTorch_Images/RNNPyTorch_Training_Metrics.png")
     plt.show()
 
     # Plot the training results
@@ -329,7 +329,7 @@ def main():
     plt.xlabel('Epoch')
     plt.legend()
     plt.tight_layout()
-    plt.savefig("RNNPyTorch_Training_Loss_and_Precision_And_Recall.png")
+    plt.savefig("Recurrent_Neural_Network_PyTorch_Images/RNNPyTorch_Training_Loss_and_Precision_And_Recall.png")
     plt.show()
 
     # ROC Curve plotting after training completes
