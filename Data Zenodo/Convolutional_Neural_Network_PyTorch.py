@@ -216,8 +216,12 @@ emotion_dict = {
     'happy': 'happy', 'neutral': 'neutral', 'sad': 'sad', 'surprised': 'surprised'
 }
 
-# Datasets to process
-dataset_paths = ['Audio_Speech_Actors_01-24_split', 'Audio_Song_Actors_01-24_split']
+# Datasets to process with updated paths
+dataset_paths = [
+    'Data Zenodo/Audio_Speech_Actors_01-24_split',
+    'Data Zenodo/Audio_Song_Actors_01-24_split'
+]
+
 
 for dataset_path in dataset_paths:
     X, encoded_labels, max_length = process_dataset(dataset_path, emotion_dict, n_mels, n_fft, hop_length, max_files)

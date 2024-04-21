@@ -14,7 +14,7 @@ def extract_features(audio_path):
     return mfcc.T
 
 # Define the path to your dataset
-dataset_path = 'Audio_Song_Actors_01-24'
+dataset_path = 'Data Zenodo/Audio_Song_Actors_01-24'
 
 # Placeholder for the feature extraction results
 features = []

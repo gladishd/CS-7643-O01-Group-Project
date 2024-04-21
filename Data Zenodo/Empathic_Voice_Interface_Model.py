@@ -32,7 +32,7 @@ def create_model(input_shape):
     return model
 
 def load_and_preprocess_data():
-    dataset_path = 'Audio_Song_Actors_01-24'  # Make sure this is correct
+    dataset_path = 'Data Zenodo/Audio_Song_Actors_01-24'
     emotions = ['happy', 'sad', 'angry', 'neutral']
     features = []
     labels = []

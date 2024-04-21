@@ -59,11 +59,13 @@ def main(audio_path):
     print(response)
 
 if __name__ == '__main__':
+    base_path = 'Data Zenodo/Audio_Song_Actors_01-24'
     # Replace 'path_to_audio_file.wav' with the path to an actual audio file
-    main('Audio_Song_Actors_01-24/angry/angry.wav')
-    main('Audio_Song_Actors_01-24/happy/happy.wav')
-    main('Audio_Song_Actors_01-24/neutral/neutral.wav')
-    main('Audio_Song_Actors_01-24/sad/sad.wav')
+    main(os.path.join(base_path, 'angry/angry.wav'))
+    main(os.path.join(base_path, 'happy/happy.wav'))
+    main(os.path.join(base_path, 'neutral/neutral.wav'))
+    main(os.path.join(base_path, 'sad/sad.wav'))
+
 
 import matplotlib.pyplot as plt
 
@@ -78,11 +80,13 @@ def plot_mfcc(audio_path):
     plt.tight_layout()
     plt.show()
 
+base_path = 'Data Zenodo/Audio_Song_Actors_01-24'
 # Call this function with the path to "an" audio file
-plot_mfcc('Audio_Song_Actors_01-24/angry/angry.wav')
-plot_mfcc('Audio_Song_Actors_01-24/happy/happy.wav')
-plot_mfcc('Audio_Song_Actors_01-24/neutral/neutral.wav')
-plot_mfcc('Audio_Song_Actors_01-24/sad/sad.wav')
+plot_mfcc(os.path.join(base_path, 'angry/angry.wav'))
+plot_mfcc(os.path.join(base_path, 'happy/happy.wav'))
+plot_mfcc(os.path.join(base_path, 'neutral/neutral.wav'))
+plot_mfcc(os.path.join(base_path, 'sad/sad.wav'))
+
 
 def plot_emotion_distribution(audio_path):
     features = preprocess_audio(audio_path)
@@ -92,13 +96,15 @@ def plot_emotion_distribution(audio_path):
     plt.bar(emotion_labels, prediction)
     plt.title('EVI Emotion Prediction Distribution')
     plt.ylabel('Probability')
-    plt.savefig('evi_emotiona_prediction_distribution.png')
+    plt.savefig('evi_emotion_prediction_distribution.png')
     plt.show()
 
-plot_emotion_distribution('Audio_Song_Actors_01-24/angry/angry.wav')
-plot_emotion_distribution('Audio_Song_Actors_01-24/happy/happy.wav')
-plot_emotion_distribution('Audio_Song_Actors_01-24/neutral/neutral.wav')
-plot_emotion_distribution('Audio_Song_Actors_01-24/sad/sad.wav')
+base_path = 'Data Zenodo/Audio_Song_Actors_01-24'
+plot_emotion_distribution(os.path.join(base_path, 'angry/angry.wav'))
+plot_emotion_distribution(os.path.join(base_path, 'happy/happy.wav'))
+plot_emotion_distribution(os.path.join(base_path, 'neutral/neutral.wav'))
+plot_emotion_distribution(os.path.join(base_path, 'sad/sad.wav'))
+
 
 from sklearn.metrics import confusion_matrix
 import seaborn as sns

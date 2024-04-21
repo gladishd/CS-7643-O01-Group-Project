@@ -5,7 +5,7 @@ import os
 import numpy as np
 
 # Define the base path where the folders are located
-base_path = 'Audio_Song_Actors_01-24'
+base_path = 'Data Zenodo/Audio_Song_Actors_01-24'
 # Folders containing the audio files
 actor_folders = ['Actor_01', 'Actor_02']
 # Paths for saving the waveform and Mel spectrogram images

@@ -207,7 +207,10 @@ def process_dataset(dataset_paths, max_files, emotion_dict, label_encoder):
 
 def main():
     label_encoder = LabelEncoder()
-    dataset_paths = ['Audio_Speech_Actors_01-24_split', 'Audio_Song_Actors_01-24_split']
+    dataset_paths = [
+        'Data Zenodo/Audio_Speech_Actors_01-24_split',
+        'Data Zenodo/Audio_Song_Actors_01-24_split'
+    ]
     train_loader, test_loader = process_dataset(dataset_paths, max_files, emotion_dict, label_encoder)
     model = RNNModel(input_size=n_mels, hidden_size=128, num_layers=2, num_classes=n_classes)
     criterion = nn.CrossEntropyLoss()

@@ -25,10 +25,9 @@ hop_length = 512
 n_fft = 2048
 n_classes = 8  # Assuming 8 emotional categories as before
 max_files = 100  # Adjust based on your dataset size for experimentation
-dataset_path = 'Audio_Song_Actors_01-24'  # Define your dataset path
 
 # Define your dataset path
-dataset_path = 'Audio_Song_Actors_01-24'
+dataset_path = 'Data Zenodo/Audio_Song_Actors_01-24'
 
 # Emotion labels
 emotion_dict = {

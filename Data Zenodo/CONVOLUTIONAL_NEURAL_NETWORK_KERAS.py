@@ -22,7 +22,7 @@ n_classes = 8
 max_files = 10  # Limit the number of files for quick testing
 
 # Define the path to your dataset
-dataset_path = 'Audio_Song_Actors_01-24'
+dataset_path = 'Data Zenodo/Audio_Song_Actors_01-24'
 
 # Emotion labelsx
 emotion_dict = {
